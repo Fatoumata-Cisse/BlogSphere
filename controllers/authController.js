@@ -1,10 +1,10 @@
-
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
 const generateToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '4h' });
+
 
 export const register = async (req, res) => {
   const { username, email, password } = req.body;
@@ -29,6 +29,7 @@ export const register = async (req, res) => {
   }
 };
 
+
 export const login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -46,5 +47,23 @@ export const login = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+export const profile = async (req, res) => {
+  const { username, password } = req.body;
+  try{
+    const user = await  user.findOne({ username});
+    if(!user) return res.status(400).json({message:'profile non trouve'});
+    const valid = await bcrypt.compare(password, user.password);
+    if(!valid) return res.status(404).json({message:'le mot de passe ne correspond pas'});
+    res.json({
+      _id: user.id,
+      username: user.username,
+      password: user.password,
+      token: generateToken(user._id)
+    });
+
+  } catch (err) {
+    res.status(500).json({message: 'erreur de serveur'});
   }
 };
