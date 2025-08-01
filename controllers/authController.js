@@ -65,3 +65,42 @@ export const profile = async (req, res) => {
     res.status(200).json({ message: "utilisateur existe" });
   }
 };
+export const updateProfile = async (req, res) => {
+  const { username, email, password } = req.body;
+
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ message: "Token manquant" });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
+
+    // Mise à jour des champs
+    user.username = username || user.username;
+    user.email = email || user.email;
+
+    if (password) {
+      const hashed = await bcrypt.hash(password, 10);
+      user.password = hashed;
+    }
+
+    const updatedUser = await user.save();
+
+    res.json({
+      _id: updatedUser._id,
+      username: updatedUser.username,
+      email: updatedUser.email,
+      token: generateToken(updatedUser._id)
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Erreur lors de la mise à jour du profil" });
+  }
+};
+
+export const logout = (req, res) => {
+  
+  res.status(200).json({ message: "Déconnexion réussie côté serveur. Supprimez le token côté client." });
+};
+
